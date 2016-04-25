@@ -5,8 +5,13 @@
     return angular
       .module('ngOrderObjectBy', [])
       .filter('orderObjectBy', function() {
-        return function (items, field, reverse) {
+        return function (items, fields) {
 
+          if(!Array.isArray(fields))
+          {
+            fields = [fields];
+          }
+        
           function isNumeric(n) {
             return !isNaN(parseFloat(n)) && isFinite(n);
           }
@@ -21,8 +26,16 @@
           function index(obj, i) {
             return obj[i];
           }
-
-          filtered.sort(function (a, b) {
+          
+          function compare(a, b, field)
+          {
+            var reverse = false;
+            if(field.charAt(0) ==  "-")
+            {
+              field = field.substr(1);
+              reverse = true;
+            }
+            
             var comparator;
             var reducedA = field.split('.').reduce(index, a);
             var reducedB = field.split('.').reduce(index, b);
@@ -35,15 +48,26 @@
             if (reducedA === reducedB) {
               comparator = 0;
             } else {
-              comparator = reducedA > reducedB ? 1 : -1;
+              if (reverse) {
+                comparator = reducedA > reducedB ? -1 : 1;
+              } else {
+                comparator = reducedA > reducedB ? 1 : -1;
+              }
             }
 
             return comparator;
-          });
-
-          if (reverse) {
-            filtered.reverse();
           }
+
+          filtered.sort(function(a, b)
+          {
+            var result = 0;
+            for (var f in fields)
+            {
+              result = compare(a, b, fields[f]);
+              if (result !== 0) break;
+            }
+            return result;
+          });
 
           return filtered;
         };
